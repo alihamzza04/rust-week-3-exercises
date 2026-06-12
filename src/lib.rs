@@ -52,19 +52,30 @@ impl CompactSize {
             return Err(BitcoinError::InsufficientBytes);
         }
         match bytes[0] {
-            0..=0xFC => Ok((CompactSize { value: bytes[0] as u64 }, 1)),
+            0..=0xFC => Ok((
+                CompactSize {
+                    value: bytes[0] as u64,
+                },
+                1,
+            )),
             0xFD => {
-                if bytes.len() < 3 { return Err(BitcoinError::InsufficientBytes); }
+                if bytes.len() < 3 {
+                    return Err(BitcoinError::InsufficientBytes);
+                }
                 let val = u16::from_le_bytes([bytes[1], bytes[2]]) as u64;
                 Ok((CompactSize { value: val }, 3))
             }
             0xFE => {
-                if bytes.len() < 5 { return Err(BitcoinError::InsufficientBytes); }
+                if bytes.len() < 5 {
+                    return Err(BitcoinError::InsufficientBytes);
+                }
                 let val = u32::from_le_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]) as u64;
                 Ok((CompactSize { value: val }, 5))
             }
             0xFF => {
-                if bytes.len() < 9 { return Err(BitcoinError::InsufficientBytes); }
+                if bytes.len() < 9 {
+                    return Err(BitcoinError::InsufficientBytes);
+                }
                 let mut arr = [0u8; 8];
                 arr.copy_from_slice(&bytes[1..9]);
                 let val = u64::from_le_bytes(arr);
@@ -138,7 +149,13 @@ impl OutPoint {
         let mut txid_arr = [0u8; 32];
         txid_arr.copy_from_slice(&bytes[0..32]);
         let vout = u32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]);
-        Ok((OutPoint { txid: Txid(txid_arr), vout }, 36))
+        Ok((
+            OutPoint {
+                txid: Txid(txid_arr),
+                vout,
+            },
+            36,
+        ))
     }
 }
 
@@ -150,7 +167,7 @@ pub struct Script {
 impl Script {
     pub fn new(bytes: Vec<u8>) -> Self {
         // TODO: Simple constructor
-        Script {bytes}
+        Script { bytes }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -169,7 +186,12 @@ impl Script {
             return Err(BitcoinError::InsufficientBytes);
         }
         let script_bytes = bytes[c1..c1 + len].to_vec();
-        Ok((Script { bytes: script_bytes }, c1 + len))
+        Ok((
+            Script {
+                bytes: script_bytes,
+            },
+            c1 + len,
+        ))
     }
 }
 
@@ -214,7 +236,7 @@ impl TransactionInput {
         let (outpoint, c1) = OutPoint::from_bytes(bytes)?;
         let (script, c2) = Script::from_bytes(&bytes[c1..])?;
         let c3_start = c1 + c2;
-        
+
         if bytes.len() < c3_start + 4 {
             return Err(BitcoinError::InsufficientBytes);
         }
@@ -224,7 +246,7 @@ impl TransactionInput {
             bytes[c3_start + 2],
             bytes[c3_start + 3],
         ]);
-        
+
         Ok((
             TransactionInput {
                 previous_output: outpoint,
@@ -319,7 +341,12 @@ impl fmt::Display for BitcoinTransaction {
         writeln!(f, "Lock Time: {}", self.lock_time)?;
         for input in self.inputs.iter() {
             writeln!(f, "Previous Output Vout: {}", input.previous_output.vout)?;
-            writeln!(f, "ScriptSig ({} bytes): {:?}", input.script_sig.bytes.len(), input.script_sig.bytes)?;
+            writeln!(
+                f,
+                "ScriptSig ({} bytes): {:?}",
+                input.script_sig.bytes.len(),
+                input.script_sig.bytes
+            )?;
         }
         Ok(())
     }
