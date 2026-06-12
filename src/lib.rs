@@ -70,7 +70,6 @@ impl CompactSize {
                 let val = u64::from_le_bytes(arr);
                 Ok((CompactSize { value: val }, 9))
             }
-            _ => Err(BitcoinError::InvalidFormat),
         }
     }
 }
@@ -164,7 +163,7 @@ impl Script {
     pub fn from_bytes(bytes: &[u8]) -> Result<(Self, usize), BitcoinError> {
         // TODO: Parse CompactSize prefix, then read that many bytes
         // Return error if not enough bytes
-        et (compact, c1) = CompactSize::from_bytes(bytes)?;
+        let (compact, c1) = CompactSize::from_bytes(bytes)?;
         let len = compact.value as usize;
         if bytes.len() < c1 + len {
             return Err(BitcoinError::InsufficientBytes);
@@ -316,18 +315,11 @@ impl fmt::Display for BitcoinTransaction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO: Format a user-friendly string showing version, inputs, lock_time
         // Display scriptSig length and bytes, and previous output info
-        writeln!(f, "Transaction (version: {}, lock_time: {})", self.version, self.lock_time)?;
-        writeln!(f, "Inputs ({}):", self.inputs.len())?;
-        for (i, input) in self.inputs.iter().enumerate() {
-            writeln!(
-                f, 
-                "  [{}] Previous Output: {}:{}, ScriptSig ({} bytes): {:?}", 
-                i, 
-                hex::encode(input.previous_output.txid.0), 
-                input.previous_output.vout,
-                input.script_sig.bytes.len(),
-                input.script_sig.bytes
-            )?;
+        writeln!(f, "Version: {}", self.version)?;
+        writeln!(f, "Lock Time: {}", self.lock_time)?;
+        for input in self.inputs.iter() {
+            writeln!(f, "Previous Output Vout: {}", input.previous_output.vout)?;
+            writeln!(f, "ScriptSig ({} bytes): {:?}", input.script_sig.bytes.len(), input.script_sig.bytes)?;
         }
         Ok(())
     }
